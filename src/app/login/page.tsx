@@ -39,7 +39,9 @@ export default function Login() {
         const data = await res.json();
         document.cookie = `auth_token=${data.accessToken}; path=/; max-age=86400; SameSite=Strict`;
         document.cookie = `user_role=${data.role}; path=/; max-age=86400; SameSite=Strict`;
-        router.push('/');
+        // Usamos window.location.href en lugar de router.push para forzar 
+        // a Next.js a recargar el layout.tsx desde el servidor y mostrar el NavBar.
+        window.location.href = '/';
       } else {
         setError('Usuario o contraseña incorrectos.');
       }
