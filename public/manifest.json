@@ -1,0 +1,22 @@
+{
+  "name": "Miel Selva Maya",
+  "short_name": "Selva Maya",
+  "description": "Sistema de Gestión de Inventario Premium",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffdf5",
+  "theme_color": "#fffdf5",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

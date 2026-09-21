@@ -173,7 +173,7 @@ export default function Login() {
                 type={showPassword ? 'text' : 'password'}
                 required
                 pattern="^[^<>]{6,50}$"
-                title="La contraseña no debe contener los caracteres < o >"
+                title="La contraseña debe tener entre 6 y 50 caracteres y no contener < o >"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="w-full bg-white/50 border border-gray-200 rounded-xl p-4 pr-12 focus:outline-none focus:ring-4 focus:ring-[#2c4c3b]/20 focus:border-[#2c4c3b] transition-all font-medium text-[#2c4c3b] hover:bg-white/80"
@@ -203,7 +203,7 @@ export default function Login() {
                 type={showPassword ? 'text' : 'password'}
                 required
                 pattern="^[^<>]{6,50}$"
-                title="La contraseña no debe contener los caracteres < o >"
+                title="La contraseña debe tener entre 6 y 50 caracteres y no contener < o >"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 className="w-full bg-white/50 border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-4 focus:ring-[#2c4c3b]/20 focus:border-[#2c4c3b] transition-all font-medium text-[#2c4c3b] hover:bg-white/80"
