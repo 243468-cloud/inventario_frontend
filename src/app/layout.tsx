@@ -16,6 +16,10 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Selva Maya',
   },
+  icons: {
+    icon: '/app-icon.png',
+    apple: '/app-icon.png',
+  },
   themeColor: '#fffdf5',
   viewport: 'minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover',
 }
