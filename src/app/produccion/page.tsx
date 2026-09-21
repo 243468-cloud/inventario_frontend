@@ -71,7 +71,6 @@ export default function Produccion() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] pb-12 font-sans selection:bg-[#2c4c3b] selection:text-white">
-      <NavBar />
       <GeofenceWrapper>
         <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 mt-8">
         {/* Header */}
@@ -208,6 +207,7 @@ export default function Produccion() {
             </span>
           </button>
         </form>
+      </div>
       </div>
       </GeofenceWrapper>
     </div>
