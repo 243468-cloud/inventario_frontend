@@ -26,8 +26,7 @@ export default function Login() {
     setConfirmPassword('');
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performLogin = async () => {
     setIsLoading(true);
     setError('');
     try {
@@ -44,12 +43,17 @@ export default function Login() {
         window.location.href = '/';
       } else {
         setError('Usuario o contraseña incorrectos.');
+        setIsLoading(false);
       }
     } catch {
       setError('Error al conectar con el servidor.');
-    } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await performLogin();
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -72,14 +76,14 @@ export default function Login() {
       });
       const data = await res.json();
       if (res.ok) {
-        setSuccess('¡Cuenta creada! Ya puedes iniciar sesión.');
-        setTimeout(() => reset('login'), 1500);
+        setSuccess('¡Cuenta creada! Ingresando...');
+        await performLogin();
       } else {
         setError(data.message || 'Error al registrar usuario.');
+        setIsLoading(false);
       }
     } catch {
       setError('Error al conectar con el servidor.');
-    } finally {
       setIsLoading(false);
     }
   };
