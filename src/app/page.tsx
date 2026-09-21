@@ -2,7 +2,6 @@ import { cookies } from 'next/headers'
 import { PackageIcon, HexagonIcon, AlertTriangleIcon } from '@/components/Icons'
 import ExportButtons from '@/components/ExportButtons'
 import Link from 'next/link'
-import Link from 'next/link'
 import { InventoryItem } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
