@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Outfit } from 'next/font/google'
 import './globals.css'
 import { cookies } from 'next/headers'
@@ -6,6 +6,14 @@ import NavBar from '@/components/NavBar'
 import PushNotificationSetup from '@/components/PushNotificationSetup'
 
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' })
+
+export const viewport: Viewport = {
+  themeColor: '#fffdf5',
+  minimumScale: 1,
+  initialScale: 1,
+  width: 'device-width',
+  viewportFit: 'cover',
+}
 
 export const metadata: Metadata = {
   title: 'Miel de las Abejas de la Selva Maya',
@@ -17,11 +25,15 @@ export const metadata: Metadata = {
     title: 'Selva Maya',
   },
   icons: {
-    icon: '/app-icon.png',
-    apple: '/app-icon.png',
+    icon: [
+      { url: '/apple-touch-icon.png' },
+      { url: '/app-icon.png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: ['/apple-touch-icon.png'],
   },
-  themeColor: '#fffdf5',
-  viewport: 'minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover',
 }
 
 export default async function RootLayout({
@@ -35,6 +47,13 @@ export default async function RootLayout({
 
   return (
     <html lang="es">
+      <head>
+        {/* iOS Apple Touch Icon - REQUIRED for home screen icon on iPhone/iPad */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png" />
+        <link rel="shortcut icon" href="/apple-touch-icon.png" />
+      </head>
       <body className={`${outfit.variable} font-sans bg-gradient-to-br from-[#fffdf5] via-[#f1f6f3] to-[#e8f0eb] min-h-screen text-[#2c4c3b] selection:bg-[#e07a5f] selection:text-white`}>
         {/* Decorative background shapes */}
         <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
