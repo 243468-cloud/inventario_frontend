@@ -159,7 +159,7 @@ export default async function Dashboard() {
 
                 let kgTotales = 0;
                 if (isGalon) kgTotales = item.currentStock * 25;
-                else if (isCubeta) kgTotales = item.currentStock * 24.5;
+                else if (isCubeta) kgTotales = item.currentStock * 27;
 
                 return (
                   <div key={`raw-${item.id}`} className="flex items-center justify-between px-6 py-3 hover:bg-amber-50/50 transition-colors">
