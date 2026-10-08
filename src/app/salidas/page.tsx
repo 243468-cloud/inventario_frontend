@@ -41,6 +41,7 @@ interface SalidaMovement {
   itemType: string;
   category?: string;
   name: string;
+  presentationName?: string;
   movementType: string;
   quantity: number;
   referenceType: string;
