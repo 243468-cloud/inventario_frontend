@@ -16,9 +16,11 @@ interface InventoryItem {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  CONTAINER: 'Envases Vacíos',
-  BULK_HONEY: 'Miel a Granel',
+  CONTAINER:  'Envases Vacíos',
+  BULK_HONEY: 'Miel y Derivados',
   DEHYDRATED: 'Deshidratados',
+  CHEESE:     'Quesos',
+  OTHER:      'Extras',
 };
 
 const UNIT_LABELS: Record<string, string> = {
@@ -32,12 +34,15 @@ const defaultForm = { name: '', category: 'CONTAINER', unit: 'PIECE', minStock: 
 export default function Almacen() {
   const [items, setItems] = useState<InventoryItem[]>([]);
 
-  // Entry form
+  // Movement form (Entrada / Salida)
+  const [movementMode, setMovementMode] = useState<'ENTRADA' | 'SALIDA'>('ENTRADA');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [formatType, setFormatType] = useState('PIEZA');
   const [quantity, setQuantity] = useState('');
+  const [exitReason, setExitReason] = useState('VENTA_DIRECTA');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [entrySuccess, setEntrySuccess] = useState('');
+  const [entryError, setEntryError] = useState('');
 
   // Item management modal
   const [showModal, setShowModal] = useState(false);
@@ -56,33 +61,56 @@ export default function Almacen() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // ── Entry Form ────────────────────────────────────────────
-  const handleEntrySubmit = async (e: React.FormEvent) => {
+  // ── Movement Submit (Entrada o Salida) ────────────────────
+  const handleMovementSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setEntrySuccess('');
+    setEntryError('');
     try {
       let baseQty = Number(quantity);
-      if (formatType === 'CUBETA') baseQty = baseQty * 27;
+      if (formatType === 'CUBETA') baseQty = baseQty * 24.5;
       if (formatType === 'GALON') baseQty = baseQty * 25;
 
-      const res = await apiFetch('/almacen/entradas', {
+      const endpoint = movementMode === 'ENTRADA' ? '/almacen/entradas' : '/almacen/salidas';
+      const body = movementMode === 'ENTRADA'
+        ? {
+            inventoryItemId: Number(selectedItemId),
+            formatType,
+            formatQuantity: Number(quantity),
+            totalBaseQuantity: baseQty
+          }
+        : {
+            inventoryItemId: Number(selectedItemId),
+            formatType,
+            formatQuantity: Number(quantity),
+            totalBaseQuantity: baseQty,
+            reason: exitReason
+          };
+
+      const res = await apiFetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          inventoryItemId: Number(selectedItemId),
-          formatType,
-          formatQuantity: Number(quantity),
-          totalBaseQuantity: baseQty
-        })
+        body: JSON.stringify(body)
       });
+
       if (res.ok) {
-        setQuantity(''); setSelectedItemId('');
-        setEntrySuccess('¡Entrada registrada correctamente!');
+        setQuantity(''); 
+        setSelectedItemId('');
+        setEntrySuccess(
+          movementMode === 'ENTRADA'
+            ? '¡Entrada registrada correctamente!'
+            : '¡Salida registrada correctamente!'
+        );
         fetchData();
-        setTimeout(() => setEntrySuccess(''), 3000);
+        setTimeout(() => setEntrySuccess(''), 3500);
+      } else {
+        const err = await res.json().catch(() => null);
+        setEntryError(err?.message || 'Error al procesar la operación. Verifica los datos.');
       }
-    } catch (e) { console.error(e); }
+    } catch { 
+      setEntryError('Error de conexión con el servidor.');
+    }
     setIsSubmitting(false);
   };
 
@@ -164,12 +192,12 @@ export default function Almacen() {
       <GeofenceWrapper>
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-4xl font-black text-[#2c4c3b] tracking-tight mb-2">Almacén de Materia Prima</h2>
+            <h2 className="text-4xl font-black text-[#d97706] tracking-tight mb-2">Almacén de Materia Prima</h2>
             <p className="text-gray-500 font-medium">Controla el inventario de mieles, envases y deshidratados.</p>
           </div>
           <button
             onClick={openNew}
-            className="self-start flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-[#2c4c3b] to-[#3a634d] text-white font-bold rounded-2xl hover:-translate-y-0.5 hover:shadow-lg transition-all active:scale-95 text-sm whitespace-nowrap"
+            className="self-start flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-[#d97706] to-[#f59e0b] text-white font-bold rounded-2xl hover:-translate-y-0.5 hover:shadow-lg transition-all active:scale-95 text-sm whitespace-nowrap"
           >
             <PlusIcon className="w-4 h-4" />
             Nuevo Material
@@ -177,10 +205,39 @@ export default function Almacen() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Left Col: Entry Form */}
+          {/* Left Col: Movement Form (Entrada / Salida) */}
           <div className="md:col-span-1">
             <div className="bg-white/70 backdrop-blur-xl p-6 rounded-3xl shadow-sm border border-white/40 sticky top-24">
-              <h3 className="text-lg font-extrabold mb-4 text-[#2c4c3b]">Registrar Entrada</h3>
+              
+              {/* Tabs Entrada / Salida */}
+              <div className="flex p-1 bg-amber-200/70 rounded-2xl mb-5 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => { setMovementMode('ENTRADA'); setEntrySuccess(''); setEntryError(''); }}
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+                    movementMode === 'ENTRADA'
+                      ? 'bg-white text-[#d97706] shadow-sm'
+                      : 'text-amber-500 hover:text-amber-800'
+                  }`}
+                >
+                  Entrada (+)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMovementMode('SALIDA'); setEntrySuccess(''); setEntryError(''); }}
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+                    movementMode === 'SALIDA'
+                      ? 'bg-white text-red-700 shadow-sm'
+                      : 'text-amber-500 hover:text-amber-800'
+                  }`}
+                >
+                  Salida (-)
+                </button>
+              </div>
+
+              <h3 className={`text-lg font-extrabold mb-4 ${movementMode === 'ENTRADA' ? 'text-[#d97706]' : 'text-red-700'}`}>
+                {movementMode === 'ENTRADA' ? 'Registrar Entrada' : 'Registrar Salida de Material'}
+              </h3>
 
               {entrySuccess && (
                 <div className="mb-4 p-3 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-sm font-bold animate-in fade-in">
@@ -188,25 +245,33 @@ export default function Almacen() {
                 </div>
               )}
 
-              <form onSubmit={handleEntrySubmit} className="space-y-4">
+              {entryError && (
+                <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-bold animate-in fade-in">
+                  {entryError}
+                </div>
+              )}
+
+              <form onSubmit={handleMovementSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Material</label>
                   <select
                     required value={selectedItemId} onChange={e => setSelectedItemId(e.target.value)}
-                    className="w-full bg-white/60 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#e07a5f] font-medium text-gray-800"
+                    className="w-full bg-white/60 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#ea580c] font-medium text-gray-800"
                   >
                     <option value="" disabled>Selecciona un material...</option>
                     {items.filter(i => i.isActive).map(i => (
-                      <option key={i.id} value={i.id}>{i.name} ({CATEGORY_LABELS[i.category] ?? i.category})</option>
+                      <option key={i.id} value={i.id}>{i.name} (Stock: {i.currentStock})</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Formato de Entrada</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">
+                    {movementMode === 'ENTRADA' ? 'Formato de Entrada' : 'Formato de Salida'}
+                  </label>
                   <select
                     required value={formatType} onChange={e => setFormatType(e.target.value)}
-                    className="w-full bg-white/60 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#e07a5f] font-medium text-gray-800"
+                    className="w-full bg-white/60 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#ea580c] font-medium text-gray-800"
                   >
                     <option value="PIEZA">Piezas / Unidades</option>
                     <option value="KILO">Kilos sueltos</option>
@@ -218,17 +283,39 @@ export default function Almacen() {
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Cantidad ({formatType}S)</label>
                   <input
-                    required value={quantity} onChange={e => setQuantity(e.target.value)} type="number" min="1" step="any"
-                    className="w-full bg-white/60 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2c4c3b] font-medium text-gray-800"
+                    required value={quantity} onChange={e => setQuantity(e.target.value)} type="number" min="0.1" step="any"
+                    className="w-full bg-white/60 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#d97706] font-medium text-gray-800"
                     placeholder="Ej. 10"
                   />
                 </div>
 
+                {movementMode === 'SALIDA' && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Motivo de Salida</label>
+                    <select
+                      required value={exitReason} onChange={e => setExitReason(e.target.value)}
+                      className="w-full bg-white/60 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 font-medium text-gray-800"
+                    >
+                      <option value="VENTA_DIRECTA">Venta Directa</option>
+                      <option value="MERMA">Merma / Rotura</option>
+                      <option value="CONSUMO_INTERNO">Consumo Interno</option>
+                      <option value="AJUSTE">Ajuste de Conteo</option>
+                    </select>
+                  </div>
+                )}
+
                 <button
                   type="submit" disabled={isSubmitting}
-                  className="w-full py-3 bg-gradient-to-r from-[#2c4c3b] to-[#3a634d] text-white font-bold rounded-xl hover:-translate-y-0.5 hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
+                  className={`w-full py-3 text-white font-bold rounded-xl hover:-translate-y-0.5 hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
+                    movementMode === 'ENTRADA'
+                      ? 'bg-gradient-to-r from-[#d97706] to-[#f59e0b]'
+                      : 'bg-gradient-to-r from-[#9e2a2b] to-[#ba181b]'
+                  }`}
                 >
-                  {isSubmitting ? 'Guardando...' : 'Registrar Entrada'}
+                  {isSubmitting 
+                    ? 'Procesando...' 
+                    : (movementMode === 'ENTRADA' ? 'Registrar Entrada' : 'Registrar Salida')
+                  }
                 </button>
               </form>
             </div>
@@ -236,10 +323,10 @@ export default function Almacen() {
 
           {/* Right Col: Inventory by Category */}
           <div className="md:col-span-2 space-y-6">
-            {(['BULK_HONEY', 'DEHYDRATED', 'CONTAINER'] as const).map(category => (
+            {(['BULK_HONEY', 'CONTAINER', 'DEHYDRATED', 'CHEESE', 'OTHER'] as const).map(category => (
               <div key={category} className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-sm border border-white/40 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100/60 flex items-center justify-between bg-white/40">
-                  <h3 className="text-lg font-extrabold text-[#1f3d2e]">{CATEGORY_LABELS[category]}</h3>
+                  <h3 className="text-lg font-extrabold text-[#92400e]">{CATEGORY_LABELS[category]}</h3>
                 </div>
                 <div className="divide-y divide-gray-100/60">
                   {items.filter(i => i.category === category).map(item => (
@@ -249,7 +336,7 @@ export default function Almacen() {
                           {category === 'CONTAINER' ? <PackageIcon className="w-5 h-5" /> : <HexagonIcon className="w-5 h-5" />}
                         </div>
                         <div>
-                          <p className="font-bold text-[#1f3d2e] text-sm">{item.name}</p>
+                          <p className="font-bold text-[#92400e] text-sm">{item.name}</p>
                           <p className="text-xs text-gray-400">${Number(item.costPerUnit ?? 0).toFixed(2)} / {UNIT_LABELS[item.unit] ?? item.unit}</p>
                           {item.isActive && item.currentStock <= item.minStock && (
                             <span className="text-[10px] uppercase font-bold text-red-500 flex items-center gap-1">
@@ -260,14 +347,14 @@ export default function Almacen() {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <p className={`font-black text-lg ${item.currentStock <= item.minStock && item.isActive ? 'text-red-600' : 'text-[#2c4c3b]'}`}>
+                          <p className={`font-black text-lg ${item.currentStock <= item.minStock && item.isActive ? 'text-red-600' : 'text-[#d97706]'}`}>
                             {Number(item.currentStock).toFixed(2)} <span className="text-xs font-bold text-gray-400 uppercase">{UNIT_LABELS[item.unit] ?? item.unit}</span>
                           </p>
                         </div>
                         <div className="flex gap-1.5">
                           <button
                             onClick={() => openEdit(item)}
-                            className="px-3 py-1.5 text-xs font-bold bg-[#2c4c3b]/10 text-[#2c4c3b] rounded-lg hover:bg-[#2c4c3b]/20 transition-colors"
+                            className="px-3 py-1.5 text-xs font-bold bg-[#d97706]/10 text-[#d97706] rounded-lg hover:bg-[#d97706]/20 transition-colors"
                           >
                             Editar
                           </button>
@@ -283,7 +370,7 @@ export default function Almacen() {
                   ))}
                   {items.filter(i => i.category === category).length === 0 && (
                     <div className="py-6 text-center text-gray-400 text-sm">
-                      Sin ítems en esta categoría. <button onClick={openNew} className="text-[#2c4c3b] font-bold underline">Agregar uno</button>.
+                      Sin ítems en esta categoría. <button onClick={openNew} className="text-[#d97706] font-bold underline">Agregar uno</button>.
                     </div>
                   )}
                 </div>
@@ -296,7 +383,7 @@ export default function Almacen() {
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-200">
-              <h3 className="text-2xl font-black text-[#2c4c3b] mb-6">
+              <h3 className="text-2xl font-black text-[#d97706] mb-6">
                 {editingItem ? `Editar: ${editingItem.name}` : 'Nuevo Material'}
               </h3>
 
@@ -311,7 +398,7 @@ export default function Almacen() {
                     pattern="^[A-Za-z0-9ñÑáéíóúÁÉÍÓÚ\s.,_-]{2,100}$"
                     title="Solo letras, números, espacios y caracteres básicos de puntuación"
                     maxLength={100}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2c4c3b]/30 font-medium"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#d97706]/30 font-medium"
                     placeholder="Ej. Cubeta 27kg, Polen Silvestre..."
                   />
                 </div>
@@ -321,18 +408,20 @@ export default function Almacen() {
                     <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Categoría</label>
                     <select
                       value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2c4c3b]/30 font-medium"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#d97706]/30 font-medium"
                     >
                       <option value="CONTAINER">Envases Vacíos</option>
-                      <option value="BULK_HONEY">Miel a Granel</option>
+                      <option value="BULK_HONEY">Miel y Derivados</option>
                       <option value="DEHYDRATED">Deshidratados</option>
+                      <option value="CHEESE">Quesos</option>
+                      <option value="OTHER">Extras</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Unidad</label>
                     <select
                       value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2c4c3b]/30 font-medium"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#d97706]/30 font-medium"
                     >
                       <option value="PIECE">Piezas</option>
                       <option value="KG">Kilogramos</option>
@@ -346,7 +435,7 @@ export default function Almacen() {
                     <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Stock Mínimo</label>
                     <input
                       required value={form.minStock} onChange={e => setForm(f => ({ ...f, minStock: e.target.value }))} type="number" min="0" step="any"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2c4c3b]/30 font-medium"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#d97706]/30 font-medium"
                       placeholder="0"
                     />
                   </div>
@@ -354,7 +443,7 @@ export default function Almacen() {
                     <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Precio / Costo ($)</label>
                     <input
                       required value={form.costPerUnit} onChange={e => setForm(f => ({ ...f, costPerUnit: e.target.value }))} type="number" min="0" step="0.01"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#e07a5f]/40 focus:border-[#e07a5f] font-medium"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#ea580c]/40 focus:border-[#ea580c] font-medium"
                       placeholder="0.00"
                     />
                   </div>
@@ -369,7 +458,7 @@ export default function Almacen() {
                   </button>
                   <button
                     type="submit" disabled={modalSubmitting}
-                    className="flex-1 py-3 bg-gradient-to-r from-[#2c4c3b] to-[#3a634d] text-white font-bold rounded-xl hover:-translate-y-0.5 hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
+                    className="flex-1 py-3 bg-gradient-to-r from-[#d97706] to-[#f59e0b] text-white font-bold rounded-xl hover:-translate-y-0.5 hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
                   >
                     {modalSubmitting ? 'Guardando...' : 'Guardar'}
                   </button>
