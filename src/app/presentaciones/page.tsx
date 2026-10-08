@@ -245,12 +245,13 @@ export default function Presentaciones() {
                 </div>
                 {selectedPresId !== 'NEW' && (
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Stock Actual (Frascos)</label>
+                    <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Stock Físico (Editar sin movimiento)</label>
                     <input
-                      required value={currentStock} onChange={e => setCurrentStock(e.target.value)} type="number" min="0"
-                      className="w-full bg-white/60 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#d97706]/30 focus:border-[#d97706] font-medium text-gray-800"
+                      required value={currentStock} onChange={e => setCurrentStock(e.target.value)} type="number" min="0" step="any"
+                      className="w-full bg-amber-50/50 border border-amber-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#d97706]/30 font-bold text-amber-900"
                       placeholder="0"
                     />
+                    <p className="text-[10px] text-gray-400 mt-1 uppercase font-semibold">Cambiar este valor NO genera reporte.</p>
                   </div>
                 )}
                 {selectedPresId === 'NEW' && (
