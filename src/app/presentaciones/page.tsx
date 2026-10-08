@@ -150,16 +150,19 @@ export default function Presentaciones() {
         });
         
         // Update stock force
-        await apiFetch(`/presentations/${selectedPresId}/stock`, {
+        const stockRes = await apiFetch(`/presentations/${selectedPresId}/stock`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ current_stock: Number(currentStock) })
         });
 
-        if (res.ok) {
+        if (res.ok && stockRes.ok) {
           setSuccess('¡Presentación y stock actualizados correctamente!');
           fetchData();
           setTimeout(() => setSuccess(''), 3000);
+        } else {
+          console.error("Error updating presentation or stock", await res.text(), await stockRes.text());
+          alert("Hubo un error al actualizar. Puede que el servidor siga reiniciándose. Intenta de nuevo.");
         }
       }
     } catch (e) {
